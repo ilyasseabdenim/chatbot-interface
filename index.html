@@ -3,73 +3,51 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Secure Chatbot Interface</title>
-    <link rel="stylesheet" href="styles.css">
-    <script src="https://cdn.tailwindcss.com"></script>
+    <title>ChatBot Interface</title>
     <script src="https://cdn.auth0.com/js/auth0-spa-js/2.0/auth0-spa-js.production.js"></script>
-    <style>
-        .chat-container { max-height: 80vh; }
-        .chat-bubble-bot { background-color: #eef2ff; color: #312e81; }
-        .chat-bubble-user { background-color: #1e40af; color: #ffffff; }
-        .option-btn { cursor: pointer; }
-        .form-container-in-chat {
-            background-color: white;
-            padding: 1rem;
-            border-radius: 0.5rem;
-            border: 1px solid #e2e8f0;
-        }
-        .hidden {
-            display: none;
-        }
-    </style>
+    <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="bg-slate-100 min-h-screen">
-    <!-- Login Container -->
-    <div id="login-container" class="flex items-center justify-center min-h-screen">
-        <div class="bg-white p-8 rounded-2xl shadow-xl w-full max-w-md">
-            <div class="text-center mb-8">
-                <div class="inline-flex items-center bg-indigo-100 text-indigo-700 py-2 px-4 rounded-full mb-4">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
-                        <path d="M2 5a2 2 0 012-2h7a2 2 0 012 2v4a2 2 0 01-2 2H9l-3 3v-3H4a2 2 0 01-2-2V5z"/>
-                        <path d="M15 7v2a4 4 0 01-4 4H9.828l-1.766 1.767c.28.149.599.233.938.233h2l3 3v-3h2a2 2 0 002-2V9a2 2 0 00-2-2h-1z"/>
-                    </svg>
-                    <h1 class="text-2xl font-bold tracking-tight">ChatBot <span class="text-indigo-600">Interface</span></h1>
-                </div>
-                <h2 class="text-xl font-semibold text-slate-800">Welcome!</h2>
-                <p class="text-slate-600 mt-1">Please sign in to continue</p>
-            </div>
-            <button id="login-btn" class="w-full bg-indigo-600 text-white py-2 px-4 rounded-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2">
+<body class="bg-gray-100">
+    <!-- Login Screen -->
+    <div id="login-container" class="min-h-screen flex items-center justify-center">
+        <div class="bg-white p-8 rounded-lg shadow-lg max-w-sm w-full">
+            <h1 class="text-2xl font-bold text-center mb-6">Welcome to ChatBot</h1>
+            <button id="login-btn" class="w-full bg-blue-600 text-white py-2 px-4 rounded hover:bg-blue-700">
                 Sign In
             </button>
         </div>
     </div>
 
-    <!-- Chat Container -->
-    <div id="chat-container" class="hidden">
+    <!-- Chat Screen -->
+    <div id="chat-container" class="hidden min-h-screen">
         <!-- Header -->
-        <div class="bg-white shadow-sm border-b">
-            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
+        <div class="bg-white shadow">
+            <div class="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
                 <div class="flex items-center space-x-4">
-                    <h1 class="text-xl font-semibold text-slate-800">ChatBot Interface</h1>
-                    <span id="user-email" class="text-sm text-slate-500"></span>
+                    <h1 class="text-xl font-bold">ChatBot</h1>
+                    <span id="user-email" class="text-gray-600"></span>
                 </div>
-                <button id="logout-btn" class="text-slate-600 hover:text-slate-800">
-                    Sign Out
-                </button>
+                <button id="logout-btn" class="text-gray-600 hover:text-gray-800">Sign Out</button>
             </div>
         </div>
 
-        <!-- Chat Interface -->
+        <!-- Chat Area -->
         <div class="max-w-3xl mx-auto p-4">
-            <div class="bg-white rounded-2xl shadow-xl">
-                <div class="p-4 border-b bg-blue-900 text-white rounded-t-2xl">
-                    <h2 class="text-xl font-bold">Chat with our Bot</h2>
-                </div>
-                <div id="chat-box" class="flex-1 p-6 overflow-y-auto chat-container min-h-[400px]"></div>
-                <div id="input-area" class="p-4 border-t bg-slate-50 rounded-b-2xl">
+            <div class="bg-white rounded-lg shadow">
+                <!-- Messages -->
+                <div id="chat-box" class="h-[500px] overflow-y-auto p-4"></div>
+
+                <!-- Input -->
+                <div class="border-t p-4">
                     <div class="flex gap-2">
-                        <input type="text" id="user-input" class="flex-1 px-4 py-2 border rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Type a message..." disabled>
-                        <button id="send-btn" class="px-6 py-2 bg-blue-600 text-white rounded-full hover:bg-blue-700 disabled:bg-slate-400" disabled>Send</button>
+                        <input type="text" 
+                               id="user-input" 
+                               class="flex-1 border rounded-full px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500" 
+                               placeholder="Type a message...">
+                        <button id="send-btn" 
+                                class="bg-blue-600 text-white px-6 py-2 rounded-full hover:bg-blue-700">
+                            Send
+                        </button>
                     </div>
                 </div>
             </div>
@@ -77,47 +55,66 @@
     </div>
 
     <script>
+        // Auth0 Configuration
         let auth0Client = null;
-        const configureClient = async () => {
-            auth0Client = await auth0.createAuth0Client({
-                domain: 'dev-mz8c8fsonw81ep0j.us.auth0.com',
-                client_id: 'FPVfw1307EHppIuL8elWrE6KcBzS8Ubq',
-                redirect_uri: window.location.origin
-            });
-        };
 
-        // Handle user authentication
-        window.onload = async () => {
-            await configureClient();
-            
-            // Check for the code in the URL
-            const query = window.location.search;
-            if (query.includes("code=")) {
-                await auth0Client.handleRedirectCallback();
-                window.history.replaceState({}, document.title, "/");
+        // Initialize Auth0
+        async function initAuth0() {
+            try {
+                auth0Client = await auth0.createAuth0Client({
+                    domain: 'dev-mz8c8fsonw81ep0j.us.auth0.com',
+                    client_id: 'FPVfw1307EHppIuL8elWrE6KcBzS8Ubq',
+                    redirect_uri: 'https://gorgeous-elf-6d2d8e.netlify.app'
+                });
+
+                // Handle callback
+                if (window.location.search.includes("code=")) {
+                    await auth0Client.handleRedirectCallback();
+                    window.history.replaceState({}, document.title, window.location.origin);
+                }
+
+                const isAuthenticated = await auth0Client.isAuthenticated();
+                if (isAuthenticated) {
+                    const user = await auth0Client.getUser();
+                    showChatInterface(user);
+                } else {
+                    showLoginScreen();
+                }
+            } catch (error) {
+                console.error('Auth0 Error:', error);
             }
+        }
 
-            const isAuthenticated = await auth0Client.isAuthenticated();
-            if (isAuthenticated) {
-                showChatInterface();
-            } else {
-                showLoginContainer();
-            }
-        };
+        // Show/Hide Functions
+        function showLoginScreen() {
+            document.getElementById('login-container').style.display = 'flex';
+            document.getElementById('chat-container').style.display = 'none';
+        }
 
-        // UI update functions
-        const showLoginContainer = () => {
-            document.getElementById('login-container').classList.remove('hidden');
-            document.getElementById('chat-container').classList.add('hidden');
-        };
-
-        const showChatInterface = async () => {
-            const user = await auth0Client.getUser();
+        function showChatInterface(user) {
+            document.getElementById('login-container').style.display = 'none';
+            document.getElementById('chat-container').style.display = 'block';
             document.getElementById('user-email').textContent = user.email;
-            document.getElementById('login-container').classList.add('hidden');
-            document.getElementById('chat-container').classList.remove('hidden');
-            initializeChatbot();
-        };
+            document.getElementById('user-input').disabled = false;
+            document.getElementById('send-btn').disabled = false;
+        }
+
+        // Message Functions
+        function addMessage(text, isUser = true) {
+            const chatBox = document.getElementById('chat-box');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `flex mb-4 ${isUser ? 'justify-end' : 'justify-start'}`;
+            
+            const bubble = document.createElement('div');
+            bubble.className = `max-w-xs rounded-lg p-3 ${
+                isUser ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-800'
+            }`;
+            bubble.textContent = text;
+            
+            messageDiv.appendChild(bubble);
+            chatBox.appendChild(messageDiv);
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }
 
         // Event Listeners
         document.getElementById('login-btn').addEventListener('click', () => {
@@ -130,53 +127,28 @@
             });
         });
 
-        // Initialize your existing chatbot code
-        function initializeChatbot() {
-            // Your existing chatbot initialization code goes here
-            const chatBox = document.getElementById('chat-box');
-            const userInput = document.getElementById('user-input');
-            const sendBtn = document.getElementById('send-btn');
-
-            // Enable input
-            userInput.disabled = false;
-            sendBtn.disabled = false;
-
-            // Add welcome message
-            addMessage("Hello! How can I help you today?", 'bot');
-        }
-
-        // Chat functionality
-        function addMessage(message, sender) {
-            const bubble = document.createElement('div');
-            const messageWrapper = document.createElement('div');
-            messageWrapper.className = 'mb-4 flex ' + (sender === 'bot' ? 'justify-start' : 'justify-end');
-            bubble.className = 'max-w-xs p-3 rounded-xl ' + 
-                (sender === 'bot' ? 'chat-bubble-bot' : 'chat-bubble-user');
-            bubble.textContent = message;
-            messageWrapper.appendChild(bubble);
-            chatBox.appendChild(messageWrapper);
-            chatBox.scrollTop = chatBox.scrollHeight;
-        }
-
-        // Handle user input
-        document.getElementById('send-btn').addEventListener('click', handleUserInput);
+        document.getElementById('send-btn').addEventListener('click', handleSendMessage);
         document.getElementById('user-input').addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') handleUserInput();
+            if (e.key === 'Enter') handleSendMessage();
         });
 
-        function handleUserInput() {
+        function handleSendMessage() {
             const input = document.getElementById('user-input');
             const message = input.value.trim();
-            if (!message) return;
-
-            addMessage(message, 'user');
-            input.value = '';
-
-            // Here you'll add your chatbot logic
-            setTimeout(() => {
-                addMessage("I received your message: " + message, 'bot');
-            }, 1000);
+            
+            if (message) {
+                addMessage(message, true);
+                input.value = '';
+                
+                // Bot response (you can replace this with your API call)
+                setTimeout(() => {
+                    addMessage('I received your message: ' + message, false);
+                }, 1000);
+            }
         }
+
+        // Initialize when page loads
+        window.onload = initAuth0;
     </script>
 </body>
 </html>
