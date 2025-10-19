@@ -2,90 +2,35 @@ body {
     font-family: 'Inter', sans-serif;
     background-color: #f8fafc;
 }
-/* Style for the draggable items */
 .step-item {
     cursor: grab;
     transition: all 0.2s ease-in-out;
+    background-color: white;
+    padding: 1rem;
+    border-radius: 0.5rem;
+    border: 1px solid #e2e8f0;
+    display: flex;
+    align-items: center;
+    box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
 }
 .step-item:hover {
     transform: translateY(-2px);
     box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
 }
-.step-item:active {
-    cursor: grabbing;
-}
-/* Style for the element being dragged from the builder */
-.dragging {
-    opacity: 0.5;
-    background: #e0e7ff;
-    border: 1px solid #4f46e5;
-}
-/* Style for the drop zone */
-#bot-preview-board {
-    border: 2px dashed #cbd5e1;
-    transition: all 0.3s ease;
-    position: relative;
-    min-height: 400px;
-}
-/* Style when an item is being dragged over the drop zone */
-#bot-preview-board.drag-over {
-    border-color: #4f46e5;
-    background-color: #eef2ff;
-}
-/* Style for items placed in the preview board */
-.preview-step {
-    animation: fadeIn 0.5s ease;
-}
-@keyframes fadeIn {
-    from { opacity: 0; transform: translateY(10px); }
-    to { opacity: 1; transform: translateY(0); }
-}
-/* Hide the default placeholder when there are items */
-#bot-preview-board:not(:empty) ~ #drop-placeholder {
-    display: none;
-}
-/* Ensure the custom placeholder is centered */
-.placeholder-center {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    pointer-events: none; /* Allows drop events to pass through */
-}
-/* Modal Styles */
-.modal-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(0, 0, 0, 0.5);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 1000;
-    opacity: 0;
-    transition: opacity 0.3s ease;
-    pointer-events: none;
-}
-.modal-overlay.active {
-    opacity: 1;
-    pointer-events: auto;
-}
-.modal-content {
-    background: white;
-    padding: 2rem;
-    border-radius: 1rem;
-    width: 90%;
-    max-width: 500px;
-    transform: scale(0.95);
-    transition: transform 0.3s ease;
-}
-.modal-overlay.active .modal-content {
-    transform: scale(1);
-}
-/* Style for reordering preview steps */
-.preview-step.dragging-preview {
-    opacity: 0.4;
-    border-style: dashed !important;
-}
+.step-item:active { cursor: grabbing; }
+.step-item i { margin-right: 0.75rem; width: 20px; height: 20px; }
+.step-item h3 { font-weight: 600; font-size: 0.875rem; color: #334155; }
+.step-item p { font-size: 0.75rem; color: #64748b; }
+
+.dragging { opacity: 0.5; background: #e0e7ff; border: 1px solid #4f46e5; }
+#bot-preview-board { border: 2px dashed #cbd5e1; transition: all 0.3s ease; position: relative; min-height: 400px; }
+#bot-preview-board.drag-over { border-color: #4f46e5; background-color: #eef2ff; }
+.preview-step { animation: fadeIn 0.5s ease; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+#bot-preview-board:not(:empty) ~ #drop-placeholder { display: none; }
+.placeholder-center { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); pointer-events: none; }
+.modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.5); display: flex; align-items: center; justify-content: center; z-index: 1000; opacity: 0; transition: opacity 0.3s ease; pointer-events: none; }
+.modal-overlay.active { opacity: 1; pointer-events: auto; }
+.modal-content { background: white; padding: 2rem; border-radius: 1rem; width: 90%; max-width: 500px; transform: scale(0.95); transition: transform 0.3s ease; }
+.modal-overlay.active .modal-content { transform: scale(1); }
+.preview-step.dragging-preview { opacity: 0.4; border-style: dashed !important; }
