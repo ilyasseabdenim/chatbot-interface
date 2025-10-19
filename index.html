@@ -5,28 +5,141 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Chatbot Interface</title>
     <link rel="stylesheet" href="styles.css">
+    <!-- Auth0 SDK -->
     <script src="https://cdn.auth0.com/js/auth0-spa-js/2.0/auth0-spa-js.production.js"></script>
 </head>
 <body>
     <div class="container">
+        <!-- Login View -->
         <div id="login-view">
             <h1>Welcome to the Chatbot</h1>
             <p>Please log in to continue.</p>
-            <button id="login-button">Log In</button>
+            <button id="login-button" onclick="login()">Log In</button>
         </div>
 
+        <!-- Chat View (hidden by default) -->
         <div id="chat-view" class="hidden">
             <div id="chat-container">
                 <div id="chat-box"></div>
                 <div id="input-container">
                     <input type="text" id="user-input" placeholder="Type your message...">
-                    <button id="send-button">Send</button>
+                    <button id="send-button" onclick="sendMessage()">Send</button>
                 </div>
             </div>
-            <button id="logout-button">Log Out</button>
+            <button id="logout-button" onclick="logout()">Log Out</button>
         </div>
     </div>
 
-    <script src="app.js"></script>
+    <script>
+        let auth0Client = null;
+
+        // 1. Initialization
+        async function initAuth0() {
+            try {
+                auth0Client = await auth0.createAuth0Client({
+                    domain: 'dev-mz8c8fsonw81ep0j.us.auth0.com',
+                    // CORRECTED: 'client_id' was changed to 'clientId' (camelCase)
+                    clientId: 'FPVfw1307EHppIuL8elWrE6KcBzS8Ubq',
+                    authorizationParams: {
+                        // BEST PRACTICE: Using window.location.origin is more reliable
+                        // than a hardcoded URL. It automatically uses your Netlify URL.
+                        redirect_uri: window.location.origin
+                    }
+                });
+            } catch (err) {
+                console.error("Error initializing Auth0 client:", err);
+            }
+        }
+
+        // 2. Login
+        async function login() {
+            try {
+                await auth0Client.loginWithRedirect();
+            } catch (err) {
+                console.error("Login failed:", err);
+            }
+        }
+
+        // 3. Logout
+        function logout() {
+            auth0Client.logout({
+                logoutParams: {
+                    returnTo: window.location.origin
+                }
+            });
+        }
+
+        // 4. Handle Auth Callback
+        async function handleAuthCallback() {
+            const isAuthenticated = await auth0Client.isAuthenticated();
+            if (isAuthenticated) {
+                updateUI();
+                return;
+            }
+            
+            const query = window.location.search;
+            if (query.includes("code=") && query.includes("state=")) {
+                await auth0Client.handleRedirectCallback();
+                updateUI();
+                // Clean the URL
+                window.history.replaceState({}, document.title, "/");
+            }
+        }
+
+        // 5. Update UI based on auth state
+        async function updateUI() {
+            const isAuthenticated = await auth0Client.isAuthenticated();
+            document.getElementById('login-view').classList.toggle('hidden', isAuthenticated);
+            document.getElementById('chat-view').classList.toggle('hidden', !isAuthenticated);
+        }
+
+        // 6. Send Message
+        async function sendMessage() {
+            const userInput = document.getElementById('user-input');
+            const message = userInput.value.trim();
+            if (message) {
+                addMessage('user', message);
+                userInput.value = '';
+
+                try {
+                    const accessToken = await auth0Client.getTokenSilently();
+                    const response = await fetch('/.netlify/functions/chat', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${accessToken}`
+                        },
+                        body: JSON.stringify({ message })
+                    });
+
+                    if (response.ok) {
+                        const data = await response.json();
+                        addMessage('bot', data.reply);
+                    } else {
+                        addMessage('bot', 'Sorry, an error occurred.');
+                    }
+                } catch (error) {
+                    console.error('Error sending message:', error);
+                    addMessage('bot', 'Error: Could not send message.');
+                }
+            }
+        }
+
+        function addMessage(sender, text) {
+            const chatBox = document.getElementById('chat-box');
+            const messageElement = document.createElement('div');
+            messageElement.classList.add('message', `${sender}-message`);
+            messageElement.textContent = text;
+            chatBox.appendChild(messageElement);
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }
+        
+        // On page load, initialize everything
+        window.onload = async () => {
+            await initAuth0();
+            await handleAuthCallback();
+            updateUI();
+        };
+    </script>
 </body>
 </html>
