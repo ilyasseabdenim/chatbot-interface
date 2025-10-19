@@ -4,7 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Chatbot Interface</title>
+
+    <!-- This line connects your CSS file -->
     <link rel="stylesheet" href="styles.css">
+
     <!-- Auth0 SDK -->
     <script src="https://cdn.auth0.com/js/auth0-spa-js/2.0/auth0-spa-js.production.js"></script>
 </head>
@@ -38,11 +41,8 @@
             try {
                 auth0Client = await auth0.createAuth0Client({
                     domain: 'dev-mz8c8fsonw81ep0j.us.auth0.com',
-                    // CORRECTED: 'client_id' was changed to 'clientId' (camelCase)
                     clientId: 'FPVfw1307EHppIuL8elWrE6KcBzS8Ubq',
                     authorizationParams: {
-                        // BEST PRACTICE: Using window.location.origin is more reliable
-                        // than a hardcoded URL. It automatically uses your Netlify URL.
                         redirect_uri: window.location.origin
                     }
                 });
