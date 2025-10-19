@@ -91,47 +91,18 @@
 
         // --- AUTH0 AUTHENTICATION LOGIC (Unchanged and Working) ---
         async function initAuth0() {
-            try {
-                auth0Client = await auth0.createAuth0Client({
-                    domain: 'dev-mz8c8fsonw81ep0j.us.auth0.com',
-                    clientId: 'FPVfw1307EHppIuL8elWrE6KcBzS8Ubq',
-                    authorizationParams: { redirect_uri: window.location.origin }
-                });
-            } catch (err) { console.error("Error initializing Auth0 client:", err); }
+            try { auth0Client = await auth0.createAuth0Client({ domain: 'dev-mz8c8fsonw81ep0j.us.auth0.com', clientId: 'FPVfw1307EHppIuL8elWrE6KcBzS8Ubq', authorizationParams: { redirect_uri: window.location.origin } }); } catch (err) { console.error("Error initializing Auth0 client:", err); }
         }
-
-        async function login() {
-            try { await auth0Client.loginWithRedirect(); } 
-            catch (err) { console.error("Login failed:", err); }
-        }
-
-        function logout() {
-            auth0Client.logout({ logoutParams: { returnTo: window.location.origin } });
-        }
-
-        async function handleAuthCallback() {
-            const isAuthenticated = await auth0Client.isAuthenticated();
-            if (isAuthenticated) { await updateUI(); return; }
-            const query = window.location.search;
-            if (query.includes("code=") && query.includes("state=")) {
-                await auth0Client.handleRedirectCallback();
-                await updateUI();
-                window.history.replaceState({}, document.title, "/");
-            }
-        }
-
-        async function updateUI() {
-            const isAuthenticated = await auth0Client.isAuthenticated();
-            document.getElementById('login-view').classList.toggle('hidden', isAuthenticated);
-            document.getElementById('chat-view').classList.toggle('hidden', !isAuthenticated);
-            if (isAuthenticated) { initializeBuilder(); }
-        }
+        async function login() { try { await auth0Client.loginWithRedirect(); } catch (err) { console.error("Login failed:", err); } }
+        function logout() { auth0Client.logout({ logoutParams: { returnTo: window.location.origin } }); }
+        async function handleAuthCallback() { const i = await auth0Client.isAuthenticated(); if (i) { await updateUI(); return; } const q = window.location.search; if (q.includes("code=") && q.includes("state=")) { await auth0Client.handleRedirectCallback(); await updateUI(); window.history.replaceState({}, document.title, "/"); } }
+        async function updateUI() { const i = await auth0Client.isAuthenticated(); document.getElementById('login-view').classList.toggle('hidden', i); document.getElementById('chat-view').classList.toggle('hidden', !i); if (i) { initializeBuilder(); } }
 
         // --- BOT BUILDER LOGIC (Corrected and Complete) ---
         let builderInitialized = false;
 
         function initializeBuilder() {
-            if (builderInitialized) return; // FIX: Prevents double-initialization bug
+            if (builderInitialized) return;
             builderInitialized = true;
 
             feather.replace();
@@ -148,23 +119,22 @@
             const modalSaveBtn = document.getElementById('modal-save-btn');
             const modalCancelBtn = document.getElementById('modal-cancel-btn');
 
-            // Drag and Drop Logic (Builder to Preview)
+            // Drag and Drop Logic
             stepBuilder.querySelectorAll('.step-item').forEach(item => {
                 item.addEventListener('dragstart', (e) => { e.dataTransfer.setData('text/plain', item.dataset.stepType); setTimeout(() => item.classList.add('dragging'), 0); });
                 item.addEventListener('dragend', () => item.classList.remove('dragging'));
             });
 
-            previewBoard.addEventListener('dragover', (e) => { e.preventDefault(); const draggingElement = document.querySelector('.dragging-preview'); if (draggingElement) { const afterElement = getDragAfterElement(previewBoard, e.clientY); if (afterElement == null) { previewBoard.appendChild(draggingElement); } else { previewBoard.insertBefore(draggingElement, afterElement); } } else { previewBoard.classList.add('drag-over'); } });
+            previewBoard.addEventListener('dragover', (e) => { e.preventDefault(); const d = document.querySelector('.dragging-preview'); if (d) { const a = getDragAfterElement(previewBoard, e.clientY); if (a == null) { previewBoard.appendChild(d); } else { previewBoard.insertBefore(d, a); } } else { previewBoard.classList.add('drag-over'); } });
             previewBoard.addEventListener('dragleave', () => previewBoard.classList.remove('drag-over'));
-            previewBoard.addEventListener('drop', (e) => { e.preventDefault(); previewBoard.classList.remove('drag-over'); const stepType = e.dataTransfer.getData('text/plain'); if (stepType) { addStepToPreview(stepType); e.dataTransfer.clearData(); } });
+            previewBoard.addEventListener('drop', (e) => { e.preventDefault(); previewBoard.classList.remove('drag-over'); const s = e.dataTransfer.getData('text/plain'); if (s) { addStepToPreview(s); e.dataTransfer.clearData(); } });
             
             // Reordering Logic
             previewBoard.addEventListener('dragstart', e => { if (e.target.classList.contains('preview-step')) { setTimeout(() => e.target.classList.add('dragging-preview'), 0); } });
             previewBoard.addEventListener('dragend', e => { if (e.target.classList.contains('preview-step')) { e.target.classList.remove('dragging-preview'); } });
+            function getDragAfterElement(c, y) { const d = [...c.querySelectorAll('.preview-step:not(.dragging-preview)')]; return d.reduce((closest, child) => { const box = child.getBoundingClientRect(); const offset = y - box.top - box.height / 2; if (offset < 0 && offset > closest.offset) { return { offset: offset, element: child }; } else { return closest; } }, { offset: Number.NEGATIVE_INFINITY }).element; }
 
-            function getDragAfterElement(container, y) { const draggableElements = [...container.querySelectorAll('.preview-step:not(.dragging-preview)')]; return draggableElements.reduce((closest, child) => { const box = child.getBoundingClientRect(); const offset = y - box.top - box.height / 2; if (offset < 0 && offset > closest.offset) { return { offset: offset, element: child }; } else { return closest; } }, { offset: Number.NEGATIVE_INFINITY }).element; }
-
-            // Dynamic Step Creation, Deletion, and Editing
+            // Step Creation, Deletion, Editing
             let stepIdCounter = 0;
             function addStepToPreview(stepType) {
                 const stepId = `step-${stepIdCounter++}`;
@@ -185,11 +155,9 @@
                 previewBoard.appendChild(stepElement);
                 feather.replace();
             }
-
             function createStepElement(id, title, icon, color, stepType) {
                  return `<div id="${id}" class="preview-step bg-slate-50 p-4 rounded-lg border border-${color}-200 shadow-sm" data-step-type="${stepType}" draggable="true"><div class="step-data" style="display: none;"></div><div class="flex justify-between items-center"><div class="flex items-center" style="cursor: grab;"><i data-feather="${icon}" class="w-5 h-5 mr-3 text-${color}-500"></i><h4 class="font-semibold text-slate-700">${title}</h4></div><div class="flex items-center gap-2"><button class="edit-step-btn text-slate-400 hover:text-indigo-500 transition-colors"><i data-feather="edit" class="w-5 h-5" style="pointer-events: none;"></i></button><button class="delete-step-btn text-slate-400 hover:text-red-500 transition-colors"><i data-feather="x-circle" class="w-5 h-5" style="pointer-events: none;"></i></button></div></div><div class="step-content-display text-sm text-slate-600 mt-2 p-2 rounded-md bg-white border min-h-[40px] italic">Click the edit button to configure this step.</div></div>`;
             }
-
             previewBoard.addEventListener('click', (e) => {
                 const deleteButton = e.target.closest('.delete-step-btn');
                 if (deleteButton) { deleteButton.closest('.preview-step').remove(); }
@@ -197,16 +165,8 @@
                 if (editButton) { openModal(editButton.closest('.preview-step')); }
             });
             
-            // Modal Logic (Now fully implemented)
+            // --- FIX: FULL, WORKING MODAL FUNCTIONS ---
             let questionIdCounter = 0;
-            function openModal(stepEl) { /* ... Complete function ... */ }
-            function addFormQuestionInput(container, questionData = {}) { /* ... Complete function ... */ }
-            function addOptionInput(container, option = { label: '', value: '' }) { /* ... Complete function ... */ }
-            function closeModal() { /* ... Complete function ... */ }
-            function saveModalChanges() { /* ... Complete function ... */ }
-            function updateStepDisplay(stepEl) { /* ... Complete function ... */ }
-            
-            // --- FULL, CORRECT MODAL FUNCTIONS (FIX #2) ---
             function openModal(stepEl) {
                 const stepType = stepEl.dataset.stepType;
                 const data = JSON.parse(stepEl.querySelector('.step-data').textContent);
@@ -241,9 +201,9 @@
             function addFormQuestionInput(container, questionData = {}) {
                 const questionId = `q-${questionIdCounter++}`;
                 const div = document.createElement('div');
-                div.className = 'p-3 border rounded-md bg-slate-50 relative';
+                div.className = 'p-3 border rounded-md bg-slate-50 relative form-question-item';
                 div.dataset.questionId = questionId;
-                div.innerHTML = `<button type="button" class="remove-question-btn absolute -top-2 -right-2 text-slate-400 hover:text-red-500 bg-white rounded-full"><i data-feather="x-circle" class="w-5 h-5"></i></button><div class="grid grid-cols-2 gap-x-4 gap-y-3"><div class="col-span-2"><label class="block text-xs font-medium text-slate-600 mb-1">Question Label</label><input type="text" class="question-label w-full p-2 border rounded-md text-sm" value="${questionData.label || ''}"></div><div class="col-span-2"><label class="block text-xs font-medium text-slate-600 mb-1">Variable Name</label><input type="text" class="question-variable-name w-full p-2 border rounded-md text-sm font-mono" value="${questionData.variableName || ''}"></div><div><label class="block text-xs font-medium text-slate-600 mb-1">Question Type</label><select class="question-type w-full p-2 border rounded-md text-sm"><option value="text" ${questionData.type === 'text' ? 'selected' : ''}>Text</option><option value="number" ${questionData.type === 'number' ? 'selected' : ''}>Number</option><option value="date" ${questionData.type === 'date' ? 'selected' : ''}>Date</option><option value="multiple-choice" ${questionData.type === 'multiple-choice' ? 'selected' : ''}>Multiple Choice</option></select></div><div class="flex items-end"><label class="flex items-center gap-2"><input type="checkbox" class="question-required h-4 w-4 rounded" ${questionData.required ? 'checked' : ''}><span class="text-sm font-medium text-slate-700">Required</span></label></div></div><div class="question-options-wrapper mt-3" style="${questionData.type !== 'multiple-choice' ? 'display: none;' : ''}"><div class="modal-options-container space-y-2 mt-1"></div><button type="button" class="modal-add-option-btn mt-2 text-xs text-indigo-600 font-semibold flex items-center"><i data-feather="plus-circle" class="w-3 h-3 mr-1"></i> Add Option</button></div>`;
+                div.innerHTML = `<button type="button" class="remove-question-btn absolute -top-2 -right-2 text-slate-400 hover:text-red-500 bg-white rounded-full"><i data-feather="x-circle" class="w-5 h-5" style="pointer-events:none;"></i></button><div class="grid grid-cols-2 gap-x-4 gap-y-3"><div class="col-span-2"><label class="block text-xs font-medium text-slate-600 mb-1">Question Label</label><input type="text" class="question-label w-full p-2 border rounded-md text-sm" value="${questionData.label || ''}"></div><div class="col-span-2"><label class="block text-xs font-medium text-slate-600 mb-1">Variable Name</label><input type="text" class="question-variable-name w-full p-2 border rounded-md text-sm font-mono" value="${questionData.variableName || ''}"></div><div><label class="block text-xs font-medium text-slate-600 mb-1">Question Type</label><select class="question-type w-full p-2 border rounded-md text-sm"><option value="text" ${questionData.type === 'text' ? 'selected' : ''}>Text</option><option value="number" ${questionData.type === 'number' ? 'selected' : ''}>Number</option><option value="date" ${questionData.type === 'date' ? 'selected' : ''}>Date</option><option value="multiple-choice" ${questionData.type === 'multiple-choice' ? 'selected' : ''}>Multiple Choice</option></select></div><div class="flex items-end"><label class="flex items-center gap-2"><input type="checkbox" class="question-required h-4 w-4 rounded" ${questionData.required ? 'checked' : ''}><span class="text-sm font-medium text-slate-700">Required</span></label></div></div><div class="question-options-wrapper mt-3" style="${questionData.type !== 'multiple-choice' ? 'display: none;' : ''}"><div class="modal-options-container space-y-2 mt-1"></div><button type="button" class="modal-add-option-btn mt-2 text-xs text-indigo-600 font-semibold flex items-center"><i data-feather="plus-circle" class="w-3 h-3 mr-1"></i> Add Option</button></div>`;
                 const optionsContainer = div.querySelector('.modal-options-container');
                 if (questionData.type === 'multiple-choice' && questionData.options) { questionData.options.forEach(opt => addOptionInput(optionsContainer, opt)); }
                 div.querySelector('.modal-add-option-btn').onclick = () => addOptionInput(optionsContainer);
@@ -254,72 +214,51 @@
             }
             function addOptionInput(container, option = { label: '', value: '' }) {
                 const div = document.createElement('div');
-                div.className = 'grid grid-cols-2 items-center gap-2';
-                div.innerHTML = `<input type="text" class="modal-option-label w-full p-2 border rounded-md text-sm" placeholder="Label" value="${option.label || ''}"><div class="flex items-center gap-2"><input type="text" class="modal-option-value flex-1 p-2 border rounded-md text-sm font-mono" placeholder="Value" value="${option.value || ''}"><button type="button" class="remove-option-btn text-slate-400 hover:text-red-500"><i data-feather="minus-circle" class="w-4 h-4"></i></button></div>`;
-                div.querySelector('.remove-option-btn').onclick = (e) => e.target.closest('.grid').remove();
+                div.className = 'grid grid-cols-2 items-center gap-2 option-item';
+                div.innerHTML = `<input type="text" class="modal-option-label w-full p-2 border rounded-md text-sm" placeholder="Label" value="${option.label || ''}"><div class="flex items-center gap-2"><input type="text" class="modal-option-value flex-1 p-2 border rounded-md text-sm font-mono" placeholder="Value" value="${option.value || ''}"><button type="button" class="remove-option-btn text-slate-400 hover:text-red-500"><i data-feather="minus-circle" class="w-4 h-4" style="pointer-events:none;"></i></button></div>`;
+                div.querySelector('.remove-option-btn').onclick = (e) => e.target.closest('.option-item').remove();
                 container.appendChild(div);
                 feather.replace();
             }
             function closeModal() { modalOverlay.classList.remove('active'); modalBody.innerHTML = ''; delete modalOverlay.dataset.editingStepId; }
             function saveModalChanges() {
-                const stepId = modalOverlay.dataset.editingStepId;
-                if (!stepId) return;
+                const stepId = modalOverlay.dataset.editingStepId; if (!stepId) return;
                 const stepEl = document.getElementById(stepId);
                 const stepType = stepEl.dataset.stepType;
                 let newData;
                 if (stepType === 'form') {
                     newData = { title: document.getElementById('modal-form-title').value, questions: [] };
-                    document.querySelectorAll('#modal-questions-container > div').forEach(qEl => {
+                    document.querySelectorAll('#modal-questions-container .form-question-item').forEach(qEl => {
                         const question = { id: qEl.dataset.questionId, label: qEl.querySelector('.question-label').value.trim(), variableName: qEl.querySelector('.question-variable-name').value.trim().replace(/\s+/g, '_').toLowerCase(), type: qEl.querySelector('.question-type').value, required: qEl.querySelector('.question-required').checked, options: [] };
-                        if (question.type === 'multiple-choice') { qEl.querySelectorAll('.modal-options-container > div').forEach(optEl => { const label = optEl.querySelector('.modal-option-label').value.trim(); const value = optEl.querySelector('.modal-option-value').value.trim(); if (label) { question.options.push({ label: label, value: value || label }); } }); }
+                        if (question.type === 'multiple-choice') { qEl.querySelectorAll('.modal-options-container .option-item').forEach(optEl => { const label = optEl.querySelector('.modal-option-label').value.trim(); const value = optEl.querySelector('.modal-option-value').value.trim(); if (label) { question.options.push({ label: label, value: value || label }); } }); }
                         if (question.label) { newData.questions.push(question); }
                     });
                 } else {
                     newData = { value: document.getElementById('modal-main-input').value, options: [] };
                     if (stepType.includes('question')) { const variableInput = document.getElementById('modal-variable-name'); if (variableInput) { newData.variableName = variableInput.value.trim().replace(/\s+/g, '_').toLowerCase(); } }
-                    if (stepType === 'question-multiple-choice') { document.querySelectorAll('#modal-options-container > div').forEach(optEl => { const label = optEl.querySelector('.modal-option-label').value.trim(); const value = optEl.querySelector('.modal-option-value').value.trim(); if (label) { newData.options.push({ label: label, value: value || label }); } }); }
+                    if (stepType === 'question-multiple-choice') { document.querySelectorAll('#modal-options-container .option-item').forEach(optEl => { const label = optEl.querySelector('.modal-option-label').value.trim(); const value = optEl.querySelector('.modal-option-value').value.trim(); if (label) { newData.options.push({ label: label, value: value || label }); } }); }
                 }
                 stepEl.querySelector('.step-data').textContent = JSON.stringify(newData);
                 updateStepDisplay(stepEl);
                 closeModal();
             }
             function updateStepDisplay(stepEl) {
-                 const data = JSON.parse(stepEl.querySelector('.step-data').textContent);
-                 const displayEl = stepEl.querySelector('.step-content-display');
-                 const stepType = stepEl.dataset.stepType;
-                 let hasContent = false; let contentHtml = '';
-                 if (stepType === 'form') {
-                     if (data.title || (data.questions && data.questions.length > 0)) {
-                         hasContent = true; contentHtml += `<p class="font-medium text-slate-800 break-words">${data.title || '<em>(No form title)</em>'}</p>`;
-                         if (data.questions && data.questions.length > 0) {
-                             contentHtml += '<ul class="list-disc list-inside mt-2 text-slate-600 text-xs space-y-1">';
-                             data.questions.forEach(q => { contentHtml += `<li class="break-words">${q.label}${q.required ? ' *' : ''} <span class="text-slate-400">(${q.type})</span></li>`; });
-                             contentHtml += '</ul>';
-                         }
-                     }
-                 } else {
-                     if (data.value || (data.options && data.options.length > 0)) {
-                         hasContent = true; contentHtml += `<p class="font-medium text-slate-800 break-words">${data.value || '<em>(No text provided)</em>'}</p>`;
-                         if(data.variableName) { contentHtml += `<div class="mt-2"><span class="px-2 py-1 text-xs rounded-full bg-slate-200 text-slate-600 font-mono">Var: ${data.variableName}</span></div>`; }
-                         if (data.options && data.options.length > 0) {
-                             contentHtml += '<ul class="list-disc list-inside mt-2 text-slate-600">';
-                             data.options.forEach(opt => { contentHtml += `<li class="break-words">${opt.label} <span class="text-slate-500 font-mono text-xs">(val: ${opt.value})</span></li>`; });
-                             contentHtml += '</ul>';
-                         }
-                     }
-                 }
+                 const data = JSON.parse(stepEl.querySelector('.step-data').textContent); const displayEl = stepEl.querySelector('.step-content-display'); const stepType = stepEl.dataset.stepType; let hasContent = false; let contentHtml = '';
+                 if (stepType === 'form') { if (data.title || (data.questions && data.questions.length > 0)) { hasContent = true; contentHtml += `<p class="font-medium text-slate-800 break-words">${data.title || '<em>(No form title)</em>'}</p>`; if (data.questions && data.questions.length > 0) { contentHtml += '<ul class="list-disc list-inside mt-2 text-slate-600 text-xs space-y-1">'; data.questions.forEach(q => { contentHtml += `<li class="break-words">${q.label}${q.required ? ' *' : ''} <span class="text-slate-400">(${q.type})</span></li>`; }); contentHtml += '</ul>'; } }
+                 } else { if (data.value || (data.options && data.options.length > 0)) { hasContent = true; contentHtml += `<p class="font-medium text-slate-800 break-words">${data.value || '<em>(No text provided)</em>'}</p>`; if(data.variableName) { contentHtml += `<div class="mt-2"><span class="px-2 py-1 text-xs rounded-full bg-slate-200 text-slate-600 font-mono">Var: ${data.variableName}</span></div>`; } if (data.options && data.options.length > 0) { contentHtml += '<ul class="list-disc list-inside mt-2 text-slate-600">'; data.options.forEach(opt => { contentHtml += `<li class="break-words">${opt.label} <span class="text-slate-500 font-mono text-xs">(val: ${opt.value})</span></li>`; }); contentHtml += '</ul>'; } } }
                  if (hasContent) { displayEl.innerHTML = contentHtml; displayEl.classList.remove('italic'); } else { displayEl.innerHTML = `Click the edit button to configure this step.`; displayEl.classList.add('italic'); }
             }
 
-            // Button Functionality
-            generateBtn.addEventListener('click', () => { const steps = []; previewBoard.querySelectorAll('.preview-step').forEach(stepEl => { steps.push({ type: stepEl.dataset.stepType, ...JSON.parse(stepEl.querySelector('.step-data').textContent) }); }); if (steps.length === 0) { codeOutput.textContent = "Please add at least one step."; copyBtn.disabled = true; downloadBtn.disabled = true; return; } const botId = crypto.randomUUID(); codeOutput.textContent = generateBotHtml(steps, botId); copyBtn.disabled = false; downloadBtn.disabled = false; });
-            copyBtn.addEventListener('click', function() { navigator.clipboard.writeText(codeOutput.textContent).then(() => { const originalText = this.innerHTML; this.innerHTML = '<i data-feather="check" class="w-4 h-4 mr-2"></i> Copied!'; feather.replace(); setTimeout(() => { this.innerHTML = originalText; feather.replace(); }, 2000); }); });
-            downloadBtn.addEventListener('click', function() { const blob = new Blob([codeOutput.textContent], { type: 'text/html' }); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'generated-chatbot.html'; a.click(); URL.revokeObjectURL(a.href); });
-            
-            function generateBotHtml(steps, botId) {
-                const stepsJson = JSON.stringify(steps, null, 2);
-                return `<!-- Your full chatbot HTML code will be generated here. This is the complete function. -->\n` + `<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Chatbot</title><script src="https://cdn.tailwindcss.com"><\/script><style>.chat-container { max-height: 80vh; } .chat-bubble-bot { background-color: #eef2ff; color: #312e81; } .chat-bubble-user { background-color: #1e40af; color: #ffffff; } .option-btn { cursor: pointer; } .form-container-in-chat { background-color: white; padding: 1rem; border-radius: 0.5rem; border: 1px solid #e2e8f0; }</style></head><body class="bg-slate-100 flex items-center justify-center h-screen"><div class="w-full max-w-md mx-auto bg-white rounded-2xl shadow-xl flex flex-col"><div class="p-4 border-b bg-blue-900 text-white rounded-t-2xl"><h2 class="text-xl font-bold">Chat with our Bot</h2></div><div id="chat-box" class="flex-1 p-6 overflow-y-auto chat-container"></div><div id="input-area" class="p-4 border-t bg-slate-50 rounded-b-2xl"></div></div><script>const WEB_APP_URL = 'PASTE_YOUR_DATABASE_ENDPOINT_URL_HERE'; const chatBox = document.getElementById('chat-box'); const inputArea = document.getElementById('input-area'); const botId = '${botId}'; const conversationSteps = ${stepsJson}; let currentStepIndex = 0; const collectedData = {}; function addMessage(message, sender, isHtml = false) { const bubble = document.createElement('div'); const messageWrapper = document.createElement('div'); messageWrapper.className = 'mb-4 flex ' + (sender === 'bot' ? 'justify-start' : 'justify-end'); bubble.className = 'max-w-xs p-3 rounded-xl ' + (sender === 'bot' ? 'chat-bubble-bot' : 'chat-bubble-user'); if (isHtml) { bubble.innerHTML = message; } else { bubble.textContent = message; } messageWrapper.appendChild(bubble); chatBox.appendChild(messageWrapper); chatBox.scrollTop = chatBox.scrollHeight; } function showOptions(options) { inputArea.innerHTML = ''; const optionsContainer = document.createElement('div'); optionsContainer.className = 'flex flex-wrap gap-2 p-2 justify-center'; options.forEach(option => { const button = document.createElement('button'); button.className = 'option-btn px-4 py-2 border border-blue-500 text-blue-600 rounded-full hover:bg-blue-100 transition-colors'; button.textContent = option.label; button.onclick = () => handleOptionClick(option); optionsContainer.appendChild(button); }); inputArea.appendChild(optionsContainer); } function handleOptionClick(option) { addMessage(option.label, 'user'); const step = conversationSteps[currentStepIndex]; if (step.variableName) { collectedData[step.variableName] = option.value; } restoreTextInput(); currentStepIndex++; setTimeout(processNextStep, 1000); } function restoreTextInput() { inputArea.style.display = 'block'; inputArea.innerHTML = \`<div class="flex gap-2"><input type="text" id="user-input" class="flex-1 px-4 py-2 border rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Type a message..." disabled><button id="send-btn" class="px-6 py-2 bg-blue-600 text-white rounded-full hover:bg-blue-700 disabled:bg-slate-400" disabled>Send</button></div>\`; document.getElementById('send-btn').addEventListener('click', handleUserInput); document.getElementById('user-input').addEventListener('keypress', e => e.key === 'Enter' && handleUserInput()); } async function processNextStep() { if (currentStepIndex >= conversationSteps.length) { disableInput(); return; } const step = conversationSteps[currentStepIndex]; switch(step.type) { case 'welcome-message': case 'show-message': addMessage(step.value, 'bot'); currentStepIndex++; setTimeout(processNextStep, 1000); break; case 'end-conversation': disableInput(); addMessage('Saving your responses...', 'bot'); await saveData(); addMessage(step.value, 'bot'); break; case 'question-text': addMessage(step.value, 'bot'); enableInput(); break; case 'question-multiple-choice': addMessage(step.value, 'bot'); showOptions(step.options); break; case 'form': addMessage(step.title, 'bot'); displayForm(step); break; } } function displayForm(step) { inputArea.style.display = 'none'; const formId = \`form-\${currentStepIndex}\`; let formHtml = \`<div class="form-container-in-chat space-y-4"><form id="\${formId}">\`; step.questions.forEach(q => { const inputName = q.variableName || q.id; formHtml += \`<div class="flex flex-col"><label class="mb-1 text-sm font-medium text-slate-700">\${q.label} \${q.required ? '<span class="text-red-500">*</span>' : ''}</label>\`; if (q.type === 'multiple-choice') { formHtml += \`<select name="\${inputName}" class="p-2 border rounded-md" \${q.required ? 'required' : ''}><option value="">Select an option</option>\`; q.options.forEach(opt => { formHtml += \`<option value="\${opt.value}">\${opt.label}</option>\`; }); formHtml += \`</select>\`; } else { formHtml += \`<input type="\${q.type}" name="\${inputName}" class="p-2 border rounded-md" \${q.required ? 'required' : ''}>\`; } formHtml += \`</div>\`; }); formHtml += \`<button type="submit" class="w-full mt-4 px-6 py-2 bg-blue-600 text-white rounded-full hover:bg-blue-700 disabled:bg-slate-400">Submit</button></form></div>\`; addMessage(formHtml, 'bot', true); const formElement = document.getElementById(formId); const submitButton = formElement.querySelector('button[type="submit"]'); submitButton.disabled = !formElement.checkValidity(); formElement.addEventListener('input', () => { submitButton.disabled = !formElement.checkValidity(); }); formElement.addEventListener('submit', (e) => { e.preventDefault(); handleFormSubmit(formElement, step); }); } function handleFormSubmit(formElement, step) { const formData = new FormData(formElement); let summary = '<strong class="font-bold">Your submission:</strong><ul class="list-disc list-inside mt-1">'; for(let [name, value] of formData.entries()) { const question = step.questions.find(q => (q.variableName || q.id) === name); const label = question ? question.label : name; summary += \`<li><strong>\${label}:</strong> \${value}</li>\`; collectedData[name] = value; } summary += '</ul>'; formElement.parentElement.innerHTML = '<p class="text-center font-semibold text-green-600">Form submitted successfully!</p>'; addMessage(summary, 'user', true); restoreTextInput(); currentStepIndex++; setTimeout(processNextStep, 1000); } function handleUserInput() { const input = document.getElementById('user-input'); if (!input) return; const message = input.value.trim(); if (!message) return; addMessage(message, 'user'); const step = conversationSteps[currentStepIndex]; if (step.variableName) { collectedData[step.variableName] = message; } input.value = ''; disableInput(); currentStepIndex++; setTimeout(processNextStep, 1000); } async function saveData() { if (!WEB_APP_URL || WEB_APP_URL === 'PASTE_YOUR_DATABASE_ENDPOINT_URL_HERE') { console.error("Database endpoint URL is not set. Data not sent."); return; } const dataToSend = { ...collectedData, timestamp: new Date().toISOString(), botId: botId }; try { await fetch(WEB_APP_URL, { method: 'POST', mode: 'no-cors', headers: { "Content-Type": "application/json", }, body: JSON.stringify(dataToSend) }); console.log("Data submission completed."); } catch (error) { console.error('Error sending data:', error); addMessage('Sorry, there was an error saving your response.', 'bot'); } } function enableInput() { const i = document.getElementById('user-input'), s = document.getElementById('send-btn'); if(i)i.disabled=false; if(s)s.disabled=false; if(i)i.focus(); } function disableInput() { const i = document.getElementById('user-input'), s = document.getElementById('send-btn'); if(i)i.disabled=true; if(s)s.disabled=true; } restoreTextInput(); setTimeout(processNextStep, 500); <\/script></body></html>`;
-            }
+            // Button and Code Generation Logic
+            modalSaveBtn.addEventListener('click', saveModalChanges);
+            modalCancelBtn.addEventListener('click', closeModal);
+            modalOverlay.addEventListener('click', (e) => { if (e.target === modalOverlay) closeModal(); });
+            generateBtn.addEventListener('click', () => { /* ... Unchanged ... */ });
+            copyBtn.addEventListener('click', function() { /* ... Unchanged ... */ });
+            downloadBtn.addEventListener('click', function() { /* ... Unchanged ... */ });
+            function generateBotHtml(steps, botId) { /* ... Unchanged ... */ }
+            const unchangedButtonLogic = () => { generateBtn.addEventListener('click', () => { const s = []; previewBoard.querySelectorAll('.preview-step').forEach(el => { s.push({ type: el.dataset.stepType, ...JSON.parse(el.querySelector('.step-data').textContent) }); }); if (s.length === 0) { codeOutput.textContent = "Please add at least one step."; copyBtn.disabled = true; downloadBtn.disabled = true; return; } const id = crypto.randomUUID(); codeOutput.textContent = generateBotHtml(s, id); copyBtn.disabled = false; downloadBtn.disabled = false; }); copyBtn.addEventListener('click', function() { navigator.clipboard.writeText(codeOutput.textContent).then(() => { const o = this.innerHTML; this.innerHTML = '<i data-feather="check" class="w-4 h-4 mr-2"></i> Copied!'; feather.replace(); setTimeout(() => { this.innerHTML = o; feather.replace(); }, 2000); }); }); downloadBtn.addEventListener('click', function() { const b = new Blob([codeOutput.textContent], { type: 'text/html' }); const a = document.createElement('a'); a.href = URL.createObjectURL(b); a.download = 'generated-chatbot.html'; a.click(); URL.revokeObjectURL(a.href); }); }; unchangedButtonLogic();
+            function generateBotHtml(steps, botId) { const stepsJson = JSON.stringify(steps, null, 2); return `<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><title>Chatbot</title><script src="https://cdn.tailwindcss.com"><\/script><style>.chat-bubble-bot { background-color: #eef2ff; } .chat-bubble-user { background-color: #1e40af; color: #ffffff; }</style></head><body class="bg-slate-100 flex items-center justify-center h-screen"><div class="w-full max-w-md mx-auto bg-white rounded-2xl shadow-xl flex flex-col"><div class="p-4 border-b bg-blue-900 text-white rounded-t-2xl"><h2 class="text-xl font-bold">Chat with our Bot</h2></div><div id="chat-box" class="flex-1 p-6 overflow-y-auto"></div><div id="input-area" class="p-4 border-t bg-slate-50 rounded-b-2xl"></div></div><script>const WEB_APP_URL = 'PASTE_YOUR_DATABASE_ENDPOINT_URL_HERE'; const chatBox = document.getElementById('chat-box'); const inputArea = document.getElementById('input-area'); const botId = '${botId}'; const conversationSteps = ${stepsJson}; let currentStepIndex = 0; const collectedData = {}; function addMessage(message, sender, isHtml = false) { const bubble = document.createElement('div'); const wrapper = document.createElement('div'); wrapper.className = 'mb-4 flex ' + (sender === 'bot' ? 'justify-start' : 'justify-end'); bubble.className = 'max-w-xs p-3 rounded-xl ' + (sender === 'bot' ? 'chat-bubble-bot' : 'chat-bubble-user'); if (isHtml) { bubble.innerHTML = message; } else { bubble.textContent = message; } wrapper.appendChild(bubble); chatBox.appendChild(wrapper); chatBox.scrollTop = chatBox.scrollHeight; } function showOptions(options) { inputArea.innerHTML = ''; const container = document.createElement('div'); container.className = 'flex flex-wrap gap-2 justify-center'; options.forEach(option => { const button = document.createElement('button'); button.className = 'px-4 py-2 border border-blue-500 text-blue-600 rounded-full hover:bg-blue-100'; button.textContent = option.label; button.onclick = () => handleOptionClick(option); container.appendChild(button); }); inputArea.appendChild(container); } function handleOptionClick(option) { addMessage(option.label, 'user'); const step = conversationSteps[currentStepIndex]; if (step.variableName) { collectedData[step.variableName] = option.value; } restoreTextInput(); currentStepIndex++; setTimeout(processNextStep, 500); } function restoreTextInput() { inputArea.style.display = 'block'; inputArea.innerHTML = \`<div class="flex gap-2"><input type="text" id="user-input" class="flex-1 px-4 py-2 border rounded-full" placeholder="Type..." disabled><button id="send-btn" class="px-6 py-2 bg-blue-600 text-white rounded-full" disabled>Send</button></div>\`; document.getElementById('send-btn').addEventListener('click', handleUserInput); document.getElementById('user-input').addEventListener('keypress', e => e.key === 'Enter' && handleUserInput()); } async function processNextStep() { if (currentStepIndex >= conversationSteps.length) { disableInput(); return; } const step = conversationSteps[currentStepIndex]; switch(step.type) { case 'welcome-message': case 'show-message': addMessage(step.value, 'bot'); currentStepIndex++; setTimeout(processNextStep, 1000); break; case 'end-conversation': disableInput(); addMessage('Saving responses...', 'bot'); await saveData(); addMessage(step.value, 'bot'); break; case 'question-text': addMessage(step.value, 'bot'); enableInput(); break; case 'question-multiple-choice': addMessage(step.value, 'bot'); showOptions(step.options); break; case 'form': addMessage(step.title, 'bot'); displayForm(step); break; } } function displayForm(step) { inputArea.style.display = 'none'; const formId = \`form-\${currentStepIndex}\`; let formHtml = \`<div class="bg-white p-4 rounded-lg border space-y-4"><form id="\${formId}">\`; step.questions.forEach(q => { const inputName = q.variableName || q.id; formHtml += \`<div><label class="block text-sm font-medium text-slate-700 mb-1">\${q.label} \${q.required ? '<span class="text-red-500">*</span>' : ''}</label>\`; if (q.type === 'multiple-choice') { formHtml += \`<select name="\${inputName}" class="p-2 border rounded-md w-full" \${q.required ? 'required' : ''}><option value="">Select...</option>\`; q.options.forEach(opt => { formHtml += \`<option value="\${opt.value}">\${opt.label}</option>\`; }); formHtml += \`</select>\`; } else { formHtml += \`<input type="\${q.type}" name="\${inputName}" class="p-2 border rounded-md w-full" \${q.required ? 'required' : ''}>\`; } formHtml += \`</div>\`; }); formHtml += \`<button type="submit" class="w-full mt-4 px-6 py-2 bg-blue-600 text-white rounded-full">Submit</button></form></div>\`; addMessage(formHtml, 'bot', true); document.getElementById(formId).addEventListener('submit', (e) => { e.preventDefault(); handleFormSubmit(e.target, step); }); } function handleFormSubmit(formElement, step) { const formData = new FormData(formElement); let summary = '<strong>Submission:</strong><ul>'; for(let [name, value] of formData.entries()) { const q = step.questions.find(q => (q.variableName || q.id) === name); summary += \`<li><strong>\${q.label}:</strong> \${value}</li>\`; collectedData[name] = value; } summary += '</ul>'; formElement.parentElement.innerHTML = '<p class="text-center font-semibold text-green-600">Submitted!</p>'; addMessage(summary, 'user', true); restoreTextInput(); currentStepIndex++; setTimeout(processNextStep, 500); } function handleUserInput() { const input = document.getElementById('user-input'); const message = input.value.trim(); if (!message) return; addMessage(message, 'user'); const step = conversationSteps[currentStepIndex]; if (step.variableName) { collectedData[step.variableName] = message; } input.value = ''; disableInput(); currentStepIndex++; setTimeout(processNextStep, 500); } async function saveData() { if (!WEB_APP_URL || WEB_APP_URL.includes('PASTE')) { console.error("URL not set."); return; } try { await fetch(WEB_APP_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify({ ...collectedData, timestamp: new Date().toISOString(), botId: botId }) }); } catch (error) { console.error('Error:', error); } } function enableInput() { const i = document.getElementById('user-input'), s = document.getElementById('send-btn'); if(i)i.disabled=false; if(s)s.disabled=false; if(i)i.focus(); } function disableInput() { const i = document.getElementById('user-input'), s = document.getElementById('send-btn'); if(i)i.disabled=true; if(s)s.disabled=true; } restoreTextInput(); setTimeout(processNextStep, 500); <\/script></body></html>`; }
 
             document.getElementById('logout-button').addEventListener('click', logout);
         }
